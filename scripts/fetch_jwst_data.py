@@ -9,24 +9,26 @@ from astroquery.mast import Observations
 def fetch_jwst(program, filters, out_dir):
     os.makedirs(out_dir, exist_ok=True)
 
-    # Query JWST/NIRCam images for the given proposal_id
     obs_table = Observations.query_criteria(
         obs_collection='JWST',
-        proposal_id=program,          # e.g. 'GO-4598'
+        project=program,
         instrument_name='NIRCam',
         dataproduct_type='image'
     )
 
-    # Filter by NIRCam filters list
-    filt_obs = obs_table[
-        obs_table['filters'].apply(lambda fl: any(f in fl for f in filters))
-    ]
-
-    if len(filt_obs) == 0:
-        print(f"[ERROR] No JWST/NIRCam data for program {program} with filters {filters}")
+    if len(obs_table) == 0:
+        print(f"[ERROR] No JWST/NIRCam observations for program {program}")
         return
 
-    # Get product list and select calibrated FITS
+    # 将 MaskedColumn 转 Python list，再用列表推导过滤
+    all_filters = obs_table['filters'].tolist()
+    mask = [any(f in flist for f in filters) for flist in all_filters]
+    filt_obs = obs_table[mask]
+
+    if len(filt_obs) == 0:
+        print(f"[ERROR] No data match filters {filters}")
+        return
+
     products = Observations.get_product_list(filt_obs)
     calib = Observations.filter_products(
         products,
@@ -35,9 +37,10 @@ def fetch_jwst(program, filters, out_dir):
         mrp_only=False
     )
 
-    print(f"Found {len(calib)} calibrated files. Downloading …")
+    print(f"Found {len(calib)} calibrated files. Downloading…")
     Observations.download_products(calib, download_dir=out_dir)
     print("Download complete.")
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
