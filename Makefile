@@ -19,10 +19,12 @@ env:
 download: download_jwst download_sl download_wl preprocess_icl
 
 download_jwst:
-	$(PYTHON) scripts/fetch_jwst_data.py \
-		--program $(MAST_PROG) \
-		--filters $(JWST_FLTS) \
-		--out-dir data/raw/jwst
+	@$(PYTHON) scripts/fetch_jwst_data.py \
+			--program $(MAST_PROG) \
+			--filters $(JWST_FLTS) \
+			--out-dir data/raw/jwst \
+		|| { echo "[FAIL] fetch_jwst_data failed"; exit 1; }
+
 
 download_sl:
 	$(PYTHON) scripts/fetch_sl_catalog.py \

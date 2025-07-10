@@ -9,21 +9,31 @@ from astroquery.mast import Observations
 
 def fetch_jwst(program, filters, out_dir):
     os.makedirs(out_dir, exist_ok=True)
-    # Query observations
-    obs_table = Observations.query_criteria(obs_collection='JWST',
-                                            provenance_name='HLSP',
-                                            project=program,
-                                            dataproduct_type='image')
-    # Filter by instrument and filter name
-    filt_obs = obs_table[[f in obs_table['filters'] for f in filters]]
-    # Get product list and download
-    products = Observations.get_product_list(filt_obs)
-    # Select science calibrated files
-    calib = Observations.filter_products(products, productSubGroupDescription='CAL',
-                                          extension='fits', mrp_only=False)
-    # Download
-    print(f"Found {len(calib)} files. Downloading to {out_dir}...")
-    manifest = Observations.download_products(calib, download_dir=out_dir)
+
+    # 直接在 query_criteria 篩選 instrument_name 與 filters
+    obs_table = Observations.query_criteria(
+        facility_name='JWST',
+        instrument_name='NIRCam',
+        filters=filters,
+        project=program,
+        dataproduct_type='image',
+    )
+
+    if len(obs_table) == 0:
+        print(f"[ERROR] No JWST/NIRCam observations found for program {program} with filters {filters}")
+        return
+
+    # 取 products 並下載 calibrated FITS 檔
+    products = Observations.get_product_list(obs_table)
+    calib = Observations.filter_products(
+        products,
+        productSubGroupDescription='CAL',
+        extension='fits',
+        mrp_only=False
+    )
+
+    print(f"Found {len(calib)} files. Downloading to {out_dir} ...")
+    Observations.download_products(calib, download_dir=out_dir)
     print("Download complete.")
 
 if __name__ == '__main__':
