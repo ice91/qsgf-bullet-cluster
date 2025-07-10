@@ -1,0 +1,21 @@
+# environment.yml — Conda 環境設定
+name: qsgf-bc
+channels:
+  - defaults
+  - conda-forge
+dependencies:
+  - python=3.11
+  - numpy=1.25
+  - scipy=1.11
+  - astropy=5.3
+  - matplotlib=3.8
+  - photutils=1.9
+  - emcee=3.1
+  - astroquery
+  - numba
+  - scikit-image
+  - pandas
+  - requests
+  - pyyaml
+  - jupyterlab
+  - pytest
